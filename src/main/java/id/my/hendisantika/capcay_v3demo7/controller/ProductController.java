@@ -104,4 +104,19 @@ public class ProductController {
                     return "redirect:/products";
                 });
     }
+
+    @GetMapping("/{id}/edit")
+    public String showEditForm(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
+        return productService.getProductById(id)
+                .map(product -> {
+                    model.addAttribute("product", product);
+                    model.addAttribute("recaptchaSiteKey", recaptchaSiteKey);
+                    return "products/edit";
+                })
+                .orElseGet(() -> {
+                    redirectAttributes.addFlashAttribute("errorMessage", "Product not found");
+                    return "redirect:/products";
+                });
+    }
+
 }
