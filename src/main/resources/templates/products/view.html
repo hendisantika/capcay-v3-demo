@@ -106,8 +106,9 @@
                     <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancel</button>
                     <form id="deleteForm" method="post" style="display: inline;"
                           th:action="@{'/products/' + ${product.id} + '/delete'}">
-                        <div id="recaptcha-container"></div>
-                        <button class="btn btn-danger" type="submit">Delete</button>
+                        <button class="btn btn-danger" id="deleteBtn" type="submit">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
                     </form>
                 </div>
             </div>
@@ -117,38 +118,45 @@
     <script th:if="${recaptchaSiteKey}" th:inline="javascript">
         /*<![CDATA[*/
         var recaptchaSiteKey = /*[[${recaptchaSiteKey}]]*/ '';
-        var recaptchaId;
-
-        function onRecaptchaLoad() {
-            recaptchaId = grecaptcha.render('recaptcha-container', {
-                'sitekey': recaptchaSiteKey,
-                'size': 'invisible',
-                'callback': function (token) {
-                    var form = document.getElementById('deleteForm');
-                    var input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'g-recaptcha-response';
-                    input.value = token;
-                    form.appendChild(input);
-                    form.submit();
-                }
-            });
-        }
 
         document.addEventListener('DOMContentLoaded', function () {
-            if (typeof grecaptcha !== 'undefined') {
-                onRecaptchaLoad();
-            } else {
-                window.onRecaptchaLoad = onRecaptchaLoad;
-            }
+            var form = document.getElementById('deleteForm');
+            var deleteBtn = document.getElementById('deleteBtn');
 
-            document.getElementById('deleteForm').addEventListener('submit', function (e) {
+            form.addEventListener('submit', function (e) {
                 e.preventDefault();
-                grecaptcha.execute(recaptchaId);
+
+                // Disable button to prevent double submission
+                deleteBtn.disabled = true;
+                deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+
+                // Execute reCAPTCHA v3
+                grecaptcha.ready(function () {
+                    grecaptcha.execute(recaptchaSiteKey, {action: 'delete_product'}).then(function (token) {
+                        // Add the token to the form
+                        var input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'g-recaptcha-response';
+                        input.value = token;
+                        form.appendChild(input);
+
+                        // Submit the form
+                        form.submit();
+                    }).catch(function (error) {
+                        console.error('reCAPTCHA error:', error);
+                        alert('reCAPTCHA verification failed. Please refresh the page and try again.');
+                        deleteBtn.disabled = false;
+                        deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete';
+                    });
+                });
+
+                return false;
             });
         });
         /*]]>*/
     </script>
+    <script th:inline="javascript"
+            th:src="'https://www.google.com/recaptcha/api.js?render=' + ${recaptchaSiteKey}"></script>
 </main>
 </body>
 </html>

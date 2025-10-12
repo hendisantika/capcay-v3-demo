@@ -78,13 +78,6 @@
                             </ul>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">reCAPTCHA Verification</label>
-                            <div class="border rounded p-3 bg-light text-center" id="recaptcha-container">
-                                <small class="text-muted">Please complete the reCAPTCHA verification</small>
-                            </div>
-                        </div>
-
                         <div class="d-flex justify-content-between">
                             <div>
                                 <a class="btn btn-secondary" href="/products">
@@ -107,81 +100,50 @@
     <script th:if="${recaptchaSiteKey}" th:inline="javascript">
         /*<![CDATA[*/
         var recaptchaSiteKey = /*[[${recaptchaSiteKey}]]*/ '';
-        var recaptchaId;
-        var isRecaptchaVerified = false;
 
-        function onRecaptchaLoad() {
-            recaptchaId = grecaptcha.render('recaptcha-container', {
-                'sitekey': recaptchaSiteKey,
-                'size': 'normal',
-                'theme': 'light',
-                'callback': function (token) {
-                    isRecaptchaVerified = true;
-                    console.log('reCAPTCHA verified successfully');
+        document.addEventListener('DOMContentLoaded', function () {
+            var form = document.getElementById('productForm');
+            var submitBtn = document.getElementById('submitBtn');
 
-                    // Add hidden input for the token
-                    var existingInput = document.querySelector('input[name="g-recaptcha-response"]');
-                    if (existingInput) {
-                        existingInput.value = token;
-                    } else {
-                        var form = document.getElementById('productForm');
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                if (!this.checkValidity()) {
+                    this.reportValidity();
+                    return false;
+                }
+
+                // Disable submit button to prevent double submission
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+                // Execute reCAPTCHA v3
+                grecaptcha.ready(function () {
+                    grecaptcha.execute(recaptchaSiteKey, {action: 'update_product'}).then(function (token) {
+                        // Add the token to the form
                         var input = document.createElement('input');
                         input.type = 'hidden';
                         input.name = 'g-recaptcha-response';
                         input.value = token;
                         form.appendChild(input);
-                    }
 
-                    // Enable submit button
-                    document.getElementById('submitBtn').disabled = false;
-                    document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> Update Product';
-                },
-                'expired-callback': function () {
-                    isRecaptchaVerified = false;
-                    document.getElementById('submitBtn').disabled = true;
-                    document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> Complete reCAPTCHA to Continue';
-                    console.log('reCAPTCHA expired');
-                },
-                'error-callback': function () {
-                    isRecaptchaVerified = false;
-                    document.getElementById('submitBtn').disabled = true;
-                    document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> reCAPTCHA Error - Refresh Page';
-                    console.log('reCAPTCHA error');
-                }
-            });
-        }
+                        // Submit the form
+                        form.submit();
+                    }).catch(function (error) {
+                        console.error('reCAPTCHA error:', error);
+                        alert('reCAPTCHA verification failed. Please refresh the page and try again.');
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="fas fa-save"></i> Update Product';
+                    });
+                });
 
-        document.addEventListener('DOMContentLoaded', function () {
-            // Initially disable submit button
-            document.getElementById('submitBtn').disabled = true;
-            document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> Complete reCAPTCHA to Continue';
-
-            if (typeof grecaptcha !== 'undefined') {
-                onRecaptchaLoad();
-            } else {
-                window.onload = function () {
-                    onRecaptchaLoad();
-                };
-            }
-
-            document.getElementById('productForm').addEventListener('submit', function (e) {
-                if (!isRecaptchaVerified) {
-                    e.preventDefault();
-                    alert('Please complete the reCAPTCHA verification before submitting.');
-                    return false;
-                }
-
-                if (!this.checkValidity()) {
-                    e.preventDefault();
-                    this.reportValidity();
-                    return false;
-                }
-
-                return true;
+                return false;
             });
         });
         /*]]>*/
     </script>
+    <script th:inline="javascript"
+            th:src="'https://www.google.com/recaptcha/api.js?render=' + ${recaptchaSiteKey}"></script>
 </main>
 </body>
 </html>
