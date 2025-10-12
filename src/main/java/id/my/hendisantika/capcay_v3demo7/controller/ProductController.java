@@ -148,4 +148,23 @@ public class ProductController {
         }
     }
 
+    @PostMapping("/{id}/delete")
+    public String deleteProduct(@PathVariable Long id,
+                                @RequestParam("g-recaptcha-response") String recaptchaToken,
+                                RedirectAttributes redirectAttributes) {
+        if (!recaptchaService.verifyRecaptcha(recaptchaToken)) {
+            redirectAttributes.addFlashAttribute("errorMessage", "reCAPTCHA verification failed");
+            return "redirect:/products";
+        }
+
+        try {
+            productService.deleteProduct(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Product deleted successfully!");
+        } catch (Exception e) {
+            log.error("Error deleting product", e);
+            redirectAttributes.addFlashAttribute("errorMessage", "Error deleting product: " + e.getMessage());
+        }
+
+        return "redirect:/products";
+    }
 }
