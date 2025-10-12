@@ -6,6 +6,24 @@ operations.
 
 ![Product Management System](capcay-v3.png)
 
+## Image Screenshots
+
+List Products
+
+![List Products](img/list.png "List Products")
+
+Add Product
+
+![Add Product](img/add.png "Add Product")
+
+Details Product
+
+![Details Product](img/details.png "Details Product")
+
+Edit Product
+
+![Edit Product](img/edit.png "Edit Product")
+
 ## Features
 
 - **CRUD Operations**: Complete product management (Create, Read, Update, Delete)
