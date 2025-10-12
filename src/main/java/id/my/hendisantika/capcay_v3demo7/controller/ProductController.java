@@ -3,14 +3,19 @@ package id.my.hendisantika.capcay_v3demo7.controller;
 import id.my.hendisantika.capcay_v3demo7.entity.Product;
 import id.my.hendisantika.capcay_v3demo7.service.ProductService;
 import id.my.hendisantika.capcay_v3demo7.service.RecaptchaService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
@@ -55,5 +60,33 @@ public class ProductController {
         model.addAttribute("product", new Product());
         model.addAttribute("recaptchaSiteKey", recaptchaSiteKey);
         return "products/create";
+    }
+
+    @PostMapping
+    public String createProduct(@Valid @ModelAttribute Product product,
+                                BindingResult result,
+                                @RequestParam("g-recaptcha-response") String recaptchaToken,
+                                Model model,
+                                RedirectAttributes redirectAttributes) {
+
+        if (!recaptchaService.verifyRecaptcha(recaptchaToken)) {
+            result.rejectValue(null, "recaptcha.invalid", "reCAPTCHA verification failed");
+        }
+
+        if (result.hasErrors()) {
+            model.addAttribute("recaptchaSiteKey", recaptchaSiteKey);
+            return "products/create";
+        }
+
+        try {
+            productService.saveProduct(product);
+            redirectAttributes.addFlashAttribute("successMessage", "Product created successfully!");
+            return "redirect:/products";
+        } catch (Exception e) {
+            log.error("Error creating product", e);
+            model.addAttribute("errorMessage", "Error creating product: " + e.getMessage());
+            model.addAttribute("recaptchaSiteKey", recaptchaSiteKey);
+            return "products/create";
+        }
     }
 }
