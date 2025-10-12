@@ -119,4 +119,33 @@ public class ProductController {
                 });
     }
 
+    @PostMapping("/{id}")
+    public String updateProduct(@PathVariable Long id,
+                                @Valid @ModelAttribute Product product,
+                                BindingResult result,
+                                @RequestParam("g-recaptcha-response") String recaptchaToken,
+                                Model model,
+                                RedirectAttributes redirectAttributes) {
+
+        if (!recaptchaService.verifyRecaptcha(recaptchaToken)) {
+            result.rejectValue(null, "recaptcha.invalid", "reCAPTCHA verification failed");
+        }
+
+        if (result.hasErrors()) {
+            model.addAttribute("recaptchaSiteKey", recaptchaSiteKey);
+            return "products/edit";
+        }
+
+        try {
+            productService.updateProduct(id, product);
+            redirectAttributes.addFlashAttribute("successMessage", "Product updated successfully!");
+            return "redirect:/products";
+        } catch (Exception e) {
+            log.error("Error updating product", e);
+            model.addAttribute("errorMessage", "Error updating product: " + e.getMessage());
+            model.addAttribute("recaptchaSiteKey", recaptchaSiteKey);
+            return "products/edit";
+        }
+    }
+
 }
