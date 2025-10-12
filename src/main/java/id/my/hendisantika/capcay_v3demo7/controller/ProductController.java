@@ -50,4 +50,10 @@ public class ProductController {
         return "products/list";
     }
 
+    @GetMapping("/new")
+    public String showCreateForm(Model model) {
+        model.addAttribute("product", new Product());
+        model.addAttribute("recaptchaSiteKey", recaptchaSiteKey);
+        return "products/create";
+    }
 }
